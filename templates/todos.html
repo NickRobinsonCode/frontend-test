@@ -4,7 +4,7 @@
 <div class="col-md-4 col-md-offset-4">
     <h1>Todo List:</h1>
     <table class="table table-striped">
-        <th>#</th><th>User</th><th>Description</th><th></th>
+        <th>#</th><th>User</th><th>Description</th><th class="text-center"><span class="glyphicon glyphicon-ok"></span></th><th></th>
         {% for todo in todos %}
             <tr>
                 <td>{{ todo.id }}</td>
@@ -14,16 +14,25 @@
                        {{ todo.description }}
                     </a>
                 </td>
-                <td>
+                <td class="text-center">
+                    {% if todo.completed %}
+                        <button class="btn btn-xs btn-success" disabled title="Completed"><span class="glyphicon glyphicon-ok glyphicon-white"></span></button>
+                    {% else %}
+                        <form method="post" action="{{ app.request.baseurl }}/todo/complete/{{ todo.id }}">
+                            <button type="submit" class="btn btn-xs btn-default" title="Complete task"><span class="glyphicon glyphicon-ok invisible"></span></button>
+                        </form>
+                    {% endif %}
+                </td>
+                <td class="text-center">
                     <form method="post" action="{{ app.request.baseurl }}/todo/delete/{{ todo.id }}">
-                        <button type="submit" class="btn btn-xs btn-danger"><span class="glyphicon glyphicon-remove glyphicon-white"></span></button>
+                        <button type="submit" class="btn btn-xs btn-danger"><span class="glyphicon glyphicon-remove"></span></button>
                     </form>
                 </td>
             </tr>
         {% endfor %}
         <tr>
             <form method="post" action="{{ app.request.baseurl }}/todo/add">
-                <td colspan="3">
+                <td colspan="4">
                     <input type="textbox" name="description" class="small-6 small-center" placeholder="Description...">
                 </td>
                 <td>
