@@ -53,11 +53,14 @@ $app->get('/todo/{id}', function ($id, Request $request) use ($app) {
         $todo = $app['db']->fetchAssoc($sql);
 
         if (strpos($contentType, 'application/json') === false) {
-            return $app['twig']->render('todo.html', [
-                'todo' => $todo,
+            //The two pages being displayed were nigh-identical; by using a single variable we can switch between the two views and reduce
+            //our code footprint.
+            return $app['twig']->render('todos.html', [
+                'todoId' => $todo['id'],
             ]);
         } else {
-            return json_encode($todo);
+            //Was not getting right Content-Type responses with json_encode; this fixed that.
+            return $app->json($todo);
         }
 
     } else {
@@ -66,15 +69,14 @@ $app->get('/todo/{id}', function ($id, Request $request) use ($app) {
 
         if (strpos($contentType, 'application/json') === false) {
             return $app['twig']->render('todos.html', [
-                'todos' => $todos,
+                'todoId' => -1,
             ]);
         } else {
-            return json_encode($todos);
+            return $app->json($todos);
         }
     }
 })
 ->value('id', null);
-
 
 $app->post('/todo/add', function (Request $request) use ($app) {
     if (null === $user = $app['session']->get('user')) {
@@ -91,7 +93,7 @@ $app->post('/todo/add', function (Request $request) use ($app) {
     if (strpos($contentType, 'application/json') === false) {
         return $app->redirect('/todo');
     } else {
-        return json_encode(array('success' => true));
+        return $app->json(array('success' => true));
     }
 });
 
@@ -105,7 +107,7 @@ $app->match('/todo/delete/{id}', function (Request $request, $id) use ($app) {
     if (strpos($contentType, 'application/json') === false) {
         return $app->redirect('/todo');
     } else {
-        return json_encode(array('success' => true));
+        return $app->json(array('success' => true));
     }
 });
 
@@ -119,6 +121,6 @@ $app->match('/todo/complete/{id}', function (Request $request, $id) use ($app) {
     if (strpos($contentType, 'application/json') === false) {
         return $app->redirect('/todo');
     } else {
-        return json_encode(array('success' => true));
+        return $app->json(array('success' => true));
     }
 });

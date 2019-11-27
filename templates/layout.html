@@ -8,6 +8,9 @@
 
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
     <link href="{{ app.request.basepath }}/css/main.css" rel="stylesheet" type="text/css" />
+    {# Simple debug setup for raw vue vs minified vue. #}
+    {# TODO: setup complete environment  #}
+    {% block javascript %}{% endblock %}
   </head>
   <body>
 
