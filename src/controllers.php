@@ -49,7 +49,8 @@ $app->get('/todo/{id}', function ($id, Request $request) use ($app) {
     $contentType = $request->headers->get('Content-Type');
 
     if ($id){
-        $sql = "SELECT * FROM todos WHERE id = '$id'";
+        //Adding the user_id clause here means that bad actors can't snoop about by providing just any id
+        $sql = "SELECT * FROM todos WHERE id = '$id' AND user_id = '${user['id']}'";
         $todo = $app['db']->fetchAssoc($sql);
 
         if (strpos($contentType, 'application/json') === false) {
@@ -64,14 +65,14 @@ $app->get('/todo/{id}', function ($id, Request $request) use ($app) {
         }
 
     } else {
-        $sql = "SELECT * FROM todos WHERE user_id = '${user['id']}'";
-        $todos = $app['db']->fetchAll($sql);
-
         if (strpos($contentType, 'application/json') === false) {
             return $app['twig']->render('todos.html', [
                 'todoId' => -1,
             ]);
         } else {
+            //Moving the query in here will avoid unnecessary DB hits when just rendering the page.
+            $sql = "SELECT * FROM todos WHERE user_id = '${user['id']}'";
+            $todos = $app['db']->fetchAll($sql);
             return $app->json($todos);
         }
     }
@@ -83,16 +84,15 @@ $app->post('/todo/add', function (Request $request) use ($app) {
         return $app->redirect('/login');
     }
 
-    $user_id = $user['id'];
-    $description = $request->get('description');
     $contentType = $request->headers->get('Content-Type');
-
-    $sql = "INSERT INTO todos (user_id, description) VALUES ('$user_id', '$description')";
-    $app['db']->executeUpdate($sql);
-
     if (strpos($contentType, 'application/json') === false) {
         return $app->redirect('/todo');
     } else {
+        $user_id = $user['id'];
+        $description = $request->get('description');
+        $sql = "INSERT INTO todos (user_id, description) VALUES ('$user_id', '$description')";
+        $app['db']->executeUpdate($sql);
+
         return $app->json(array('success' => true));
     }
 });
@@ -100,13 +100,14 @@ $app->post('/todo/add', function (Request $request) use ($app) {
 
 $app->match('/todo/delete/{id}', function (Request $request, $id) use ($app) {
 
-    $sql = "DELETE FROM todos WHERE id = '$id'";
-    $app['db']->executeUpdate($sql);
-
     $contentType = $request->headers->get('Content-Type');
     if (strpos($contentType, 'application/json') === false) {
         return $app->redirect('/todo');
     } else {
+        //Moved the queries here to avoid pointless DB hits when there's an incorrect Content-Type
+        //Similar to requesting Todos above, if the user isn't the owner of the Todo they shouldn't be allowed to delete it.
+        $sql = "DELETE FROM todos WHERE id = '$id' AND user_id = '${user['id']}'";
+        $app['db']->executeUpdate($sql);
         return $app->json(array('success' => true));
     }
 });
@@ -114,13 +115,12 @@ $app->match('/todo/delete/{id}', function (Request $request, $id) use ($app) {
 
 $app->match('/todo/complete/{id}', function (Request $request, $id) use ($app) {
 
-    $sql = "UPDATE todos SET completed = 1 WHERE id = '$id'";
-    $app['db']->executeUpdate($sql);
-
     $contentType = $request->headers->get('Content-Type');
     if (strpos($contentType, 'application/json') === false) {
         return $app->redirect('/todo');
     } else {
+        $sql = "UPDATE todos SET completed = 1 WHERE id = '$id' AND user_id = '${user['id']}'";
+        $app['db']->executeUpdate($sql);
         return $app->json(array('success' => true));
     }
 });
