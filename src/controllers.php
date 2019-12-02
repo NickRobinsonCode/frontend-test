@@ -84,29 +84,33 @@ $app->post('/todo/add', function (Request $request) use ($app) {
         return $app->redirect('/login');
     }
 
+    $user_id = $user['id'];
+    $description = $request->get('description');
+    $sql = "INSERT INTO todos (user_id, description) VALUES ('$user_id', '$description')";
+    $app['db']->executeUpdate($sql);
+
     $contentType = $request->headers->get('Content-Type');
     if (strpos($contentType, 'application/json') === false) {
         return $app->redirect('/todo');
     } else {
-        $user_id = $user['id'];
-        $description = $request->get('description');
-        $sql = "INSERT INTO todos (user_id, description) VALUES ('$user_id', '$description')";
-        $app['db']->executeUpdate($sql);
-
         return $app->json(array('success' => true));
     }
 });
 
 
 $app->match('/todo/delete/{id}', function (Request $request, $id) use ($app) {
+    if (null === $user = $app['session']->get('user')) {
+        return $app->redirect('/login');
+    }
 
+    $user_id = $user['id'];
     $contentType = $request->headers->get('Content-Type');
     if (strpos($contentType, 'application/json') === false) {
         return $app->redirect('/todo');
     } else {
         //Moved the queries here to avoid pointless DB hits when there's an incorrect Content-Type
         //Similar to requesting Todos above, if the user isn't the owner of the Todo they shouldn't be allowed to delete it.
-        $sql = "DELETE FROM todos WHERE id = '$id' AND user_id = '${user['id']}'";
+        $sql = "DELETE FROM todos WHERE id = '$id' AND user_id = '$user_id'";
         $app['db']->executeUpdate($sql);
         return $app->json(array('success' => true));
     }
@@ -114,12 +118,16 @@ $app->match('/todo/delete/{id}', function (Request $request, $id) use ($app) {
 
 
 $app->match('/todo/complete/{id}', function (Request $request, $id) use ($app) {
+    if (null === $user = $app['session']->get('user')) {
+        return $app->redirect('/login');
+    }
 
+    $user_id = $user['id'];
     $contentType = $request->headers->get('Content-Type');
     if (strpos($contentType, 'application/json') === false) {
         return $app->redirect('/todo');
     } else {
-        $sql = "UPDATE todos SET completed = 1 WHERE id = '$id' AND user_id = '${user['id']}'";
+        $sql = "UPDATE todos SET completed = 1 WHERE id = '$id' AND user_id = '$user_id'";
         $app['db']->executeUpdate($sql);
         return $app->json(array('success' => true));
     }
